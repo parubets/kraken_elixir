@@ -36,7 +36,6 @@ defmodule Kraken.Api.Transport do
       {:ok, "text/html"} ->
         {:reply, {:error, res.body}, state}
     end
-    {:reply, json, state}
   end
 
   defp get_api_params(method, params) do
