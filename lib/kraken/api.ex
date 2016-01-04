@@ -19,6 +19,24 @@ defmodule Kraken.Api do
     post_to_api "/0/private/TradeVolume", reduce_params(%{pair: pair})
   end
 
+  def buy(opts \\ []) do
+    add_order("buy", opts)
+  end
+
+  def sell(opts \\ []) do
+    add_order("sell", opts)
+  end
+
+  defp add_order(type, opts) do
+    pair = Keyword.fetch!(opts, :pair)
+    ordertype = Keyword.fetch!(opts, :ordertype)
+    volume = Keyword.fetch!(opts, :volume)
+    price = Keyword.get(opts, :price)
+    userref = Keyword.get(opts, :userref)
+    validate = Keyword.get(opts, :validate)
+    post_to_api "/0/private/AddOrder", reduce_params(%{userref: userref, validate: validate, pair: pair, type: type, ordertype: ordertype, volume: volume, price: price})
+  end
+
   defp post_to_api(method, params \\ %{}) do
     Kraken.Api.Transport.post(method, params)
   end
