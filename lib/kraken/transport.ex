@@ -22,19 +22,27 @@ defmodule Kraken.Api.Transport do
   def handle_call({:post, method, params}, _from, state) do
     {body, signature} = get_api_params(method, params)
     url = @base_url <> method
-    res = HTTPotion.post(url, [body: body, headers: ["Content-Type": "application/x-www-form-urlencoded", "API-Key": Application.get_env(:kraken_elixir, :key), "API-Sign": signature]])
-    case Dict.fetch(res.headers, :"Content-Type") do
+    try do
+      res = HTTPotion.post(url, [body: body, headers: ["Content-Type": "application/x-www-form-urlencoded", "API-Key": Application.get_env(:kraken_elixir, :key), "API-Sign": signature]])
+      reply = parse_res(res)
+      {:reply, reply, state}
+    rescue
+      e in HTTPotion.HTTPError -> {:reply, {:error, e}, state}
+    end
+  end
+
+  defp parse_res(res) do
+    case Map.fetch(res.headers, :"Content-Type") do
       {:ok, "application/json; charset=utf-8"} ->
         json = parse_json(res)
-        case Dict.fetch(json, "result") do
+        case Map.fetch(json, "result") do
           {:ok, result} ->
-            {:reply, {:ok, result}, state}
+            {:ok, result}
           :error ->
-            error = Dict.get(json, "error")
-            {:reply, {:error, error}, state}
+            {:error, Map.get(json, "error")}
         end
       {:ok, "text/html"} ->
-        {:reply, {:error, res.body}, state}
+        {:error, res.body}
     end
   end
 
