@@ -27,6 +27,10 @@ defmodule Kraken.Api do
     add_order("sell", opts)
   end
 
+  def cancel_order(txid) do
+    post_to_api "/0/private/CancelOrder", %{txid: txid}
+  end
+
   defp add_order(type, opts) do
     pair = Keyword.fetch!(opts, :pair)
     ordertype = Keyword.fetch!(opts, :ordertype)

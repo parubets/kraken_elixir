@@ -43,6 +43,8 @@ defmodule Kraken.Api.Transport do
         end
       {:ok, "text/html"} ->
         {:error, res.body}
+      :error ->
+        {:error, res.body}
     end
   end
 
