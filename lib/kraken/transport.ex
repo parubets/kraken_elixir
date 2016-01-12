@@ -10,7 +10,7 @@ defmodule Kraken.Api.Transport do
   end
 
   def post(method, params) do
-    GenServer.call(__MODULE__, {:post, method, params})
+    GenServer.call(__MODULE__, {:post, method, params}, :infinity)
   end
 
   ## Server Callbacks
