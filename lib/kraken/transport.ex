@@ -39,7 +39,8 @@ defmodule Kraken.Api.Transport do
           {:ok, result} ->
             {:ok, result}
           :error ->
-            {:error, Map.get(json, "error")}
+            error = Map.get(json, "error", []) |> List.to_string
+            {:error, error}
         end
       {:ok, "text/html"} ->
         {:error, res.body}
