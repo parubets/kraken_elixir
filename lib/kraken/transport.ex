@@ -13,6 +13,10 @@ defmodule Kraken.Api.Transport do
     GenServer.call(__MODULE__, {:post, method, params}, :infinity)
   end
 
+  def get(path) do
+    GenServer.call(__MODULE__, {:get, path}, :infinity)
+  end
+
   ## Server Callbacks
 
   def init(:ok) do
@@ -24,6 +28,17 @@ defmodule Kraken.Api.Transport do
     url = @base_url <> method
     try do
       res = HTTPotion.post(url, [body: body, headers: ["Content-Type": "application/x-www-form-urlencoded", "API-Key": Application.get_env(:kraken_elixir, :key), "API-Sign": signature]])
+      reply = parse_res(res)
+      {:reply, reply, state}
+    rescue
+      e in HTTPotion.HTTPError -> {:reply, {:error, e}, state}
+    end
+  end
+
+  def handle_call({:get, path}, _from, state) do
+    url = @base_url <> path
+    try do
+      res = HTTPotion.get(url)
       reply = parse_res(res)
       {:reply, reply, state}
     rescue
