@@ -19,8 +19,8 @@ defmodule KrakenElixir.Mixfile do
 
   defp deps do
     [
-      {:ibrowse, github: "cmullaparthi/ibrowse", tag: "v4.2.2"},
-      {:httpotion, "~> 2.1.0"},
+      {:ibrowse, "~> 4.2"},
+      {:httpotion, "~> 2.2"},
       {:poison, "~> 1.5"}
     ]
   end
