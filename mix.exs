@@ -21,7 +21,7 @@ defmodule KrakenElixir.Mixfile do
     [
       {:ibrowse, "~> 4.2"},
       {:httpotion, "~> 2.2"},
-      {:poison, "~> 1.5"}
+      {:poison, "~> 2.1"}
     ]
   end
 end
