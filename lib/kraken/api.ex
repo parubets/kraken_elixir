@@ -4,6 +4,10 @@ defmodule Kraken.Api do
     get_from_api "/0/public/Depth?pair=#{pair}"
   end
 
+  def ticker(pair) do
+    get_from_api "/0/public/Ticker?pair=#{pair}"
+  end
+
   def balance do
     post_to_api "/0/private/Balance"
   end
