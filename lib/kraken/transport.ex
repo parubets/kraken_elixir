@@ -47,8 +47,8 @@ defmodule Kraken.Api.Transport do
   end
 
   defp parse_res(res) do
-    case Keyword.fetch(res.headers, :"Content-Type") do
-      {:ok, "application/json; charset=utf-8"} ->
+    case res.headers["content-type"] do
+      "application/json; charset=utf-8" ->
         json = parse_json(res)
         case Map.fetch(json, "result") do
           {:ok, result} ->
@@ -57,8 +57,6 @@ defmodule Kraken.Api.Transport do
             error = Map.get(json, "error", []) |> List.to_string
             {:error, error}
         end
-      {:ok, "text/html"} ->
-        {:error, res.body}
       _ ->
         {:error, res.body}
     end
