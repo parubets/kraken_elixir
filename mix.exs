@@ -3,7 +3,7 @@ defmodule KrakenElixir.Mixfile do
 
   def project do
     [app: :kraken_elixir,
-     version: "0.0.2",
+     version: "0.0.3",
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -20,7 +20,7 @@ defmodule KrakenElixir.Mixfile do
   defp deps do
     [
       {:ibrowse, "~> 4.2"},
-      {:httpotion, "~> 2.2"},
+      {:httpotion, "~> 2.2.2"},
       {:poison, "~> 2.1"}
     ]
   end
