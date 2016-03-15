@@ -1,3 +1,7 @@
+defmodule Kraken.Api.Error do
+  defexception message: "Kraken API exception"
+end
+
 defmodule Kraken.Api.Transport do
   use GenServer
 
@@ -54,9 +58,9 @@ defmodule Kraken.Api.Transport do
           %{"error" => [], "result" => result} when map_size(result) > 0 ->
             {:ok, result}
           %{"error" => error} when length(error) > 0 ->
-            {:error, List.to_string(error)}
+            {:error, %Kraken.Api.Error{message: List.to_string(error)}}
           _ ->
-            {:error, res.body}
+            {:error, %Kraken.Api.Error{message: res.body}}
         end
       _ ->
         {:error, res.body}
