@@ -30,40 +30,45 @@ defmodule Kraken.Api.Transport do
   def handle_call({:post, method, params}, _from, state) do
     {body, signature} = get_api_params(method, params)
     url = @base_url <> method
-    try do
-      res = HTTPotion.post(url, [body: body, headers: ["Content-Type": "application/x-www-form-urlencoded", "API-Key": Application.get_env(:kraken_elixir, :key), "API-Sign": signature]])
-      reply = parse_res(res)
-      {:reply, reply, state}
-    rescue
-      e in HTTPotion.HTTPError -> {:reply, {:error, e}, state}
+    post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => Application.get_env(:kraken_elixir, :key), "API-Sign" => signature}
+    case HTTPoison.post(url, body, post_headers) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
+        reply = parse_res(body, headers)
+        {:reply, reply, state}
+      {:ok, %HTTPoison.Response{status_code: 404}} ->
+        raise "Not found :("
+      {:error, e} ->
+        {:reply, {:error, e}, state}
     end
   end
 
   def handle_call({:get, path}, _from, state) do
     url = @base_url <> path
-    try do
-      res = HTTPotion.get(url)
-      reply = parse_res(res)
-      {:reply, reply, state}
-    rescue
-      e in HTTPotion.HTTPError -> {:reply, {:error, e}, state}
+    case HTTPoison.get(url) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
+        reply = parse_res(body, headers)
+        {:reply, reply, state}
+      {:ok, %HTTPoison.Response{status_code: 404}} ->
+        raise "Not found :("
+      {:error, e} ->
+        {:reply, {:error, e}, state}
     end
   end
 
-  defp parse_res(res) do
-    case res.headers["content-type"] do
+  defp parse_res(body, headers) do
+    case get_header(headers, "Content-Type") do
       "application/json; charset=utf-8" ->
-        json = parse_json(res)
+        json = parse_json(body)
         case json do
           %{"error" => [], "result" => result} when map_size(result) > 0 ->
             {:ok, result}
           %{"error" => error} when length(error) > 0 ->
             {:error, %Kraken.Api.Error{message: List.to_string(error)}}
           _ ->
-            {:error, %Kraken.Api.Error{message: res.body}}
+            {:error, %Kraken.Api.Error{message: body}}
         end
       _ ->
-        {:error, res.body}
+        {:error, body}
     end
   end
 
@@ -91,8 +96,15 @@ defmodule Kraken.Api.Transport do
     method <> digest
   end
 
-  defp parse_json(response) do
-    Poison.decode!(response.body)
+  defp parse_json(body) do
+    Poison.decode!(body)
+  end
+
+  defp get_header(headers, key) do
+    headers
+    |> Enum.filter(fn({k, _}) -> k == key end)
+    |> hd
+    |> elem(1)
   end
 
 end
