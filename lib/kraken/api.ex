@@ -45,6 +45,13 @@ defmodule Kraken.Api do
     post_to_api "/0/private/CancelOrder", %{txid: txid}
   end
 
+  def withdraw(opts) do
+    asset = Keyword.fetch!(opts, :asset)
+    key = Keyword.fetch!(opts, :key)
+    amount = Keyword.fetch!(opts, :amount)
+    post_to_api "/0/private/Withdraw", %{asset: asset, key: key, amount: amount}
+  end
+
   defp add_order(type, opts) do
     pair = Keyword.fetch!(opts, :pair)
     ordertype = Keyword.fetch!(opts, :ordertype)
