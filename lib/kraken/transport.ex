@@ -6,6 +6,8 @@ defmodule Kraken.Api.Transport do
   use GenServer
 
   @base_url "https://api.kraken.com"
+  @kraken_key Application.get_env(:kraken_elixir, :key)
+  @kraken_secret Application.get_env(:kraken_elixir, :secret)
 
   ## Public API
 
@@ -30,7 +32,7 @@ defmodule Kraken.Api.Transport do
   def handle_call({:post, method, params}, _from, state) do
     {body, signature} = get_api_params(method, params)
     url = @base_url <> method
-    post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => Application.get_env(:kraken_elixir, :key), "API-Sign" => signature}
+    post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => get_kraken_key, "API-Sign" => signature}
     case HTTPoison.post(url, body, post_headers) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
         reply = parse_res(body, headers)
@@ -85,7 +87,7 @@ defmodule Kraken.Api.Transport do
   end
 
   defp generate_signature(nonce, body, method) do
-    key = Base.decode64!(Application.get_env(:kraken_elixir, :secret))
+    key = Base.decode64!(get_kraken_secret)
     message = generate_message(nonce, body, method)
     :crypto.hmac(:sha512, key, message)
       |> Base.encode64
@@ -105,6 +107,14 @@ defmodule Kraken.Api.Transport do
     |> Enum.filter(fn({k, _}) -> k == key end)
     |> hd
     |> elem(1)
+  end
+
+  defp get_kraken_key do
+    Application.get_env(:kraken_elixir, :key) || System.get_env("KRAKEN_KEY") || @kraken_key
+  end
+
+  defp get_kraken_secret do
+    Application.get_env(:kraken_elixir, :secret) || System.get_env("KRAKEN_SECRET") || @kraken_secret
   end
 
 end
