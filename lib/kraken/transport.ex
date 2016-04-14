@@ -1,5 +1,5 @@
 defmodule Kraken.Api.Error do
-  defexception message: "Kraken API exception"
+  defexception [message: "Kraken API exception", body: nil, status_code: nil, headers: nil]
 end
 
 defmodule Kraken.Api.Transport do
@@ -37,8 +37,8 @@ defmodule Kraken.Api.Transport do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
         reply = parse_res(body, headers)
         {:reply, reply, state}
-      {:ok, %HTTPoison.Response{status_code: 404}} ->
-        raise "Not found :("
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
+        {:reply, {:error, %Kraken.Api.Error{message: "Kraken POST API exception", body: body, status_code: status_code, headers: headers}}, state}
       {:error, e} ->
         {:reply, {:error, e}, state}
     end
@@ -50,8 +50,8 @@ defmodule Kraken.Api.Transport do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
         reply = parse_res(body, headers)
         {:reply, reply, state}
-      {:ok, %HTTPoison.Response{status_code: 404}} ->
-        raise "Not found :("
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
+        {:reply, {:error, %Kraken.Api.Error{message: "Kraken GET API exception", body: body, status_code: status_code, headers: headers}}, state}
       {:error, e} ->
         {:reply, {:error, e}, state}
     end

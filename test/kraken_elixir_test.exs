@@ -11,8 +11,9 @@ defmodule KrakenElixirTest do
   end
 
   test "ticker wrong ticker" do
-    {:error, %Kraken.Api.Error{message: message}} = Kraken.Api.ticker("XXBTZXXX")
+    {:error, %Kraken.Api.Error{message: message, body: body}} = Kraken.Api.ticker("XXBTZXXX")
     assert message == "EQuery:Unknown asset pair"
+    assert body == nil
   end
 
   # Private API
