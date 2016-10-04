@@ -16,6 +16,11 @@ defmodule Kraken.Api do
     post_to_api "/0/private/TradeBalance"
   end
 
+  def deposit_status(opts) do
+    asset = Keyword.fetch!(opts, :asset)
+    post_to_api "/0/private/DepositStatus", %{asset: asset}
+  end
+
   def open_orders(opts \\ []) do
     trades = Keyword.get(opts, :trades)
     userref = Keyword.get(opts, :userref)
