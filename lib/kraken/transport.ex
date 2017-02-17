@@ -33,7 +33,8 @@ defmodule Kraken.Api.Transport do
     {body, signature} = get_api_params(method, params)
     url = @base_url <> method
     post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => get_kraken_key, "API-Sign" => signature}
-    case HTTPoison.post(url, body, post_headers) do
+    opts = [recv_timeout: get_recv_timeout]
+    case HTTPoison.post(url, body, post_headers, opts) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
         reply = parse_res(body, headers)
         {:reply, reply, state}
@@ -115,6 +116,10 @@ defmodule Kraken.Api.Transport do
 
   defp get_kraken_secret do
     Application.get_env(:kraken_elixir, :secret) || System.get_env("KRAKEN_SECRET") || @kraken_secret
+  end
+
+  defp get_recv_timeout do
+    Application.get_env(:kraken_elixir, :recv_timeout) || 10_000
   end
 
 end
