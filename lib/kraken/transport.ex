@@ -16,11 +16,11 @@ defmodule Kraken.Api.Transport do
   end
 
   def post(method, params) do
-    GenServer.call(__MODULE__, {:post, method, params}, :infinity)
+    GenServer.call(Kraken.Api.PostTransport, {:post, method, params}, :infinity)
   end
 
   def get(path) do
-    GenServer.call(__MODULE__, {:get, path}, :infinity)
+    GenServer.call(Kraken.Api.GetTransport, {:get, path}, :infinity)
   end
 
   ## Server Callbacks
@@ -45,17 +45,26 @@ defmodule Kraken.Api.Transport do
     end
   end
 
-  def handle_call({:get, path}, _from, state) do
+  def handle_call({:get, path}, from, state) do
     url = @base_url <> path
-    case HTTPoison.get(url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
-        reply = parse_res(body, headers)
-        {:reply, reply, state}
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
-        {:reply, {:error, %Kraken.Api.Error{message: "Kraken GET API exception", body: body, status_code: status_code, headers: headers}}, state}
-      {:error, e} ->
-        {:reply, {:error, e}, state}
+    me = self()
+    Task.start fn ->
+      reply = case HTTPoison.get(url) do
+        {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
+          parse_res(body, headers)
+        {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
+          {:error, %Kraken.Api.Error{message: "Kraken GET API exception", body: body, status_code: status_code, headers: headers}}
+        {:error, e} ->
+          {:error, e}
+      end
+      send me, {:got_get, reply, from}
     end
+    {:noreply, state}
+  end
+
+  def handle_info({:got_get, reply, from}, state) do
+    GenServer.reply(from, reply)
+    {:noreply, state}
   end
 
   defp parse_res(body, headers) do
@@ -119,7 +128,7 @@ defmodule Kraken.Api.Transport do
   end
 
   defp get_recv_timeout do
-    Application.get_env(:kraken_elixir, :recv_timeout) || 10_000
+    Application.get_env(:kraken_elixir, :recv_timeout) || 5_000
   end
 
 end

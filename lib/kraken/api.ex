@@ -1,5 +1,13 @@
 defmodule Kraken.Api do
 
+  def asset_pairs do
+    get_from_api "/0/public/AssetPairs"
+  end
+
+  def trades(pair, since \\ nil) do
+    get_from_api "/0/public/Trades?pair=#{pair}&since=#{since}"
+  end
+
   def orderbook(pair) do
     get_from_api "/0/public/Depth?pair=#{pair}"
   end
