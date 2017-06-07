@@ -32,8 +32,8 @@ defmodule Kraken.Api.Transport do
   def handle_call({:post, method, params}, _from, state) do
     {body, signature} = get_api_params(method, params)
     url = @base_url <> method
-    post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => get_kraken_key, "API-Sign" => signature}
-    opts = [recv_timeout: get_recv_timeout]
+    post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => get_kraken_key(), "API-Sign" => signature}
+    opts = [recv_timeout: post_recv_timeout()]
     case HTTPoison.post(url, body, post_headers, opts) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
         reply = parse_res(body, headers)
@@ -47,9 +47,10 @@ defmodule Kraken.Api.Transport do
 
   def handle_call({:get, path}, from, state) do
     url = @base_url <> path
+    opts = [recv_timeout: get_recv_timeout()]
     me = self()
     Task.start fn ->
-      reply = case HTTPoison.get(url) do
+      reply = case HTTPoison.get(url, opts) do
         {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
           parse_res(body, headers)
         {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
@@ -85,8 +86,8 @@ defmodule Kraken.Api.Transport do
   end
 
   defp get_api_params(method, params) do
-    nonce = generate_nonce
-    body = Dict.merge(%{nonce: nonce}, params)
+    nonce = generate_nonce()
+    body = Map.merge(%{nonce: nonce}, params)
       |> URI.encode_query
     signature = generate_signature(nonce, body, method)
     {body, signature}
@@ -97,7 +98,7 @@ defmodule Kraken.Api.Transport do
   end
 
   defp generate_signature(nonce, body, method) do
-    key = Base.decode64!(get_kraken_secret)
+    key = Base.decode64!(get_kraken_secret())
     message = generate_message(nonce, body, method)
     :crypto.hmac(:sha512, key, message)
       |> Base.encode64
@@ -128,7 +129,11 @@ defmodule Kraken.Api.Transport do
   end
 
   defp get_recv_timeout do
-    Application.get_env(:kraken_elixir, :recv_timeout) || 5_000
+    Application.get_env(:kraken_elixir, :get_recv_timeout) || 5_000
+  end
+
+  defp post_recv_timeout do
+    Application.get_env(:kraken_elixir, :post_recv_timeout) || 5_000
   end
 
 end

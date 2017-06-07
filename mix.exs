@@ -3,11 +3,11 @@ defmodule KrakenElixir.Mixfile do
 
   def project do
     [app: :kraken_elixir,
-     version: "0.2.2",
+     version: "0.3.0",
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps,
+     deps: deps(),
      elixirc_options: [debug_info: false]]
   end
 
