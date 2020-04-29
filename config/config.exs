@@ -1,7 +1,7 @@
-use Mix.Config
+import Config
 
-config :kraken_elixir, key: ""
-config :kraken_elixir, secret: ""
-
-config :kraken_elixir, get_recv_timeout: 5000
-config :kraken_elixir, post_recv_timeout: 5000
+config :kraken_elixir, Kraken.Api.Transport,
+  key: "",
+  secret: "",
+  get_recv_timeout: 5000,
+  post_recv_timeout: 5000

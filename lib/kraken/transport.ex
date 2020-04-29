@@ -6,8 +6,11 @@ defmodule Kraken.Api.Transport do
   use GenServer
 
   @base_url "https://api.kraken.com"
-  @kraken_key Application.get_env(:kraken_elixir, :key)
-  @kraken_secret Application.get_env(:kraken_elixir, :secret)
+  @kraken_key Application.get_env(:kraken_elixir, __MODULE__, []) |> Keyword.get(:key)
+  @kraken_secret Application.get_env(:kraken_elixir, __MODULE__, []) |> Keyword.get(:secret)
+
+  @default_get_recv_timeout 5_000
+  @default_post_recv_timeout 5_000
 
   ## Public API
 
@@ -33,7 +36,7 @@ defmodule Kraken.Api.Transport do
     {body, signature} = get_api_params(method, params)
     url = @base_url <> method
     post_headers = %{"Content-Type" => "application/x-www-form-urlencoded", "API-Key" => get_kraken_key(), "API-Sign" => signature}
-    opts = [recv_timeout: post_recv_timeout()]
+    opts = [recv_timeout: (config(:post_recv_timeout) || @default_post_recv_timeout)]
     case HTTPoison.post(url, body, post_headers, opts) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
         reply = parse_res(body, headers)
@@ -47,7 +50,7 @@ defmodule Kraken.Api.Transport do
 
   def handle_call({:get, path}, from, state) do
     url = @base_url <> path
-    opts = [recv_timeout: get_recv_timeout()]
+    opts = [recv_timeout: (config(:get_recv_timeout) || @default_get_recv_timeout)]
     me = self()
     Task.start fn ->
       reply = case HTTPoison.get(url, opts) do
@@ -121,19 +124,26 @@ defmodule Kraken.Api.Transport do
   end
 
   defp get_kraken_key do
-    Application.get_env(:kraken_elixir, :key) || System.get_env("KRAKEN_KEY") || @kraken_key
+    vault_get_kv("kraken", "key") || config(:key) || System.get_env("KRAKEN_KEY") || @kraken_key
   end
 
   defp get_kraken_secret do
-    Application.get_env(:kraken_elixir, :secret) || System.get_env("KRAKEN_SECRET") || @kraken_secret
+    vault_get_kv("kraken", "secret") || config(:secret) || System.get_env("KRAKEN_SECRET") || @kraken_secret
   end
 
-  defp get_recv_timeout do
-    Application.get_env(:kraken_elixir, :get_recv_timeout) || 5_000
+  defp vault_get_kv(path, key) do
+    case config(:vault_module) do
+      vault_mod when is_atom(vault_mod) -> vault_mod.get_kv(path, key)
+      _ -> nil
+    end
   end
 
-  defp post_recv_timeout do
-    Application.get_env(:kraken_elixir, :post_recv_timeout) || 5_000
+  defp config do
+    Application.get_env(:kraken_elixir, __MODULE__, [])
+  end
+
+  defp config(key, default \\ nil) do
+    Keyword.get(config(), key, default)
   end
 
 end
