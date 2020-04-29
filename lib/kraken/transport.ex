@@ -133,8 +133,8 @@ defmodule Kraken.Api.Transport do
 
   defp vault_get_kv(path, key) do
     case config(:vault_module) do
+      nil -> nil
       vault_mod when is_atom(vault_mod) -> vault_mod.get_kv(path, key)
-      _ -> nil
     end
   end
 
